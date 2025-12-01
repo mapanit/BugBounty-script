@@ -50,8 +50,8 @@
 bash
 
 # Клонируйте репозиторий
-git clone [https://github.com/yourusername/bugbounty-setup.git](https://github.com/Pavel253/BugBounty-script.git)
-cd bugbounty-setup
+git clone [https://github.com/yourusername/bugbounty-script.git](https://github.com/Pavel253/BugBounty-script.git)
+cd bugbounty-script
 
 # Запустите скрипт установки
 python3 setup.py
