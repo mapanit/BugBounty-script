@@ -1,141 +1,228 @@
-# BugBounty-script
+BugBounty Environment Setup tools
+<p align="center"> <img src="https://img.shields.io/badge/Python-3.6+-blue.svg" alt="Python"> <img src="https://img.shields.io/badge/Platform-Linux-lightgrey.svg" alt="Platform"> <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"> </p>
+📋 Описание
 
-`main.py` — установочный скрипт, который готовит рабочее окружение для Bug Bounty / пентестинга на Linux: ставит системные зависимости, создаёт виртуальное окружение Python, скачивает и раскладывает по папкам набор открытых инструментов разведки и сканирования.
+BugBounty-tools — это автоматический скрипт для быстрого развертывания полноценного окружения для Bug Bounty и пентестинга. Он устанавливает и настраивает десятки популярных инструментов, создает структуру каталогов и готовит виртуальное окружение Python.
 
-## Что делает `main.py`
+    ⚠️ ВАЖНО: Используйте установленные инструменты ТОЛЬКО в рамках законных и согласованных тестов (authorized testing / bug bounty программы). Несанкционированное использование может нарушать закон.
 
-- Проверяет, что скрипт запущен на Linux, и завершает работу с понятной ошибкой, если нет.
-- Проверяет доступность `sudo` (если скрипт запущен не от root).
-- Определяет пакетный менеджер (`apt`, `dnf`, `yum`, `pacman`, `zypper`) автоматически, с возможностью подтвердить/выбрать вручную или задать флагом.
-- Устанавливает системные зависимости и инструменты одним проходом (git, python3, curl, golang, nmap, nikto, ruby, ffuf и др.) — без повторного `update` пакетного менеджера.
-- Ставит WPScan через `gem` (Ruby уже есть в системных зависимостях).
-- Создаёт виртуальное окружение Python (`venv`) **после** установки системных пакетов — на Debian/Ubuntu для этого нужен пакет `python3-venv`, который ставится на предыдущем шаге.
-- Создаёт структуру папок для инструментов (Web_catalog, Subdomains, Scaner, CMS, SSRF, Open_redirect, LFI, XSS, SQLj, JS, Dorks, Reconnaissance, Secrets, Nuclei_Templates, Wordlists).
-- Клонирует инструменты с GitHub в соответствующие директории.
-- Устанавливает Go-инструменты через `go install` и печатает подсказку по добавлению `GOPATH/bin` в `PATH`.
-- Устанавливает SecLists (опционально) и пытается создать символическую ссылку `/usr/share/seclists`.
-- Устанавливает Metasploit Framework (опционально): скачивает официальный установщик, проверяет, что файл не пустой, запускает установку и инициализирует БД (`msfdb`); при сбое пробует поставить через пакетный менеджер.
-- Устанавливает общие Python-пакеты в venv и зависимости из всех найденных `requirements.txt`.
-- В конце печатает сводный отчёт обо всех шагах, которые завершились с ошибкой — вместо того чтобы искать их по логу вручную.
+🚀 Быстрый старт
+bash
 
-## Пререквизиты
+# Клонирование репозитория
+git clone https://github.com/yourusername/bugbounty-script.git
+cd bugbounty-script
 
-- Linux с одним из пакетных менеджеров: `apt`, `dnf`, `yum`, `pacman`, `zypper`.
-- Python 3.x.
-- Интернет-соединение.
-- Права `sudo` для установки системных пакетов (либо запуск от root).
-
-## Как запустить
-
-Интерактивный режим (скрипт сам спросит про пакетный менеджер, SecLists и Metasploit):
-
-```bash
+# Запуск скрипта
 python3 main.py
-```
 
-Неинтерактивный режим — без вопросов, для автоматизации/CI:
+📦 Что устанавливается
+🔍 Разведка (Reconnaissance)
 
-```bash
-python3 main.py --non-interactive --package-manager apt --install-seclists --install-metasploit
-```
+    theHarvester — сбор информации о доменах
 
-### Доступные флаги
+    assetfinder, subfinder, amass, chaos-client — поиск поддоменов
 
-| Флаг | Описание |
-|---|---|
-| `--package-manager {apt,dnf,yum,pacman,zypper}` | Задать пакетный менеджер вручную, без автоопределения и вопроса |
-| `--venv-dir DIR` | Имя каталога для виртуального окружения (по умолчанию `venv`) |
-| `--skip-venv` | Не создавать виртуальное окружение Python |
-| `--install-seclists` | Установить SecLists без вопроса |
-| `--install-metasploit` | Установить Metasploit Framework без вопроса |
-| `--non-interactive`, `-y` | Не задавать никаких вопросов, использовать автоопределение и флаги выше |
+    subzy — детект subdomain takeover
 
-## После выполнения вы получите
+    waybackurls, gau — сбор исторических URL
 
-- Виртуальное окружение `venv` (если не передан `--skip-venv`); инструкция по активации/деактивации печатается в консоль.
-- Набор папок с клонированными инструментами.
-- Установленные (или частично установленные при ошибках) системные, Ruby- и Go-инструменты.
-- Подсказку в консоли, как добавить `GOPATH/bin` в `PATH`, если он туда ещё не входит.
-- Сводку в конце вывода: что установлено, рекомендуемый workflow и список ошибок (если есть).
+    gowitness — массовые скриншоты хостов
 
-## Структура папок
+    naabu — быстрый port scan
 
-| Папка | Назначение |
-|---|---|
-| `Web_catalog` | перебор директорий/файлов, поиск параметров |
-| `Subdomains` | поиск поддоменов |
-| `Scaner` | сканеры уязвимостей общего назначения |
-| `CMS` | определение и анализ CMS (WordPress, Drupal, Joomla и др.) |
-| `SSRF` | обнаружение SSRF |
-| `Open_redirect` | проверка открытых редиректов |
-| `LFI` | Local File Inclusion |
-| `XSS` | поиск и fuzzing XSS |
-| `SQLj` | SQL-инъекции |
-| `JS` | анализ JavaScript, поиск секретов в коде фронтенда |
-| `Dorks` | dork-запросы |
-| `Reconnaissance` | разведка (домены, email и т.д.) |
-| `Secrets` | поиск credentials в репозиториях |
-| `Nuclei_Templates` | шаблоны для `nuclei` |
-| `Wordlists` | словари для брутфорса (в т.ч. SecLists) |
+    dnsx — массовая DNS-резолюция
 
-## Инструменты, которые скачивает/устанавливает `main.py`
+    hakrawler, katana — веб-краулинг
 
-### Git-репозитории по категориям
+🛡️ Сканирование уязвимостей
 
-- **Web_catalog**: [dirsearch](https://github.com/maurosoria/dirsearch), [ParamSpider](https://github.com/0xKayala/ParamSpider)
-- **Subdomains**: [subscraper](https://github.com/m8sec/subscraper)
-- **Open_redirect**: [openredirex](https://github.com/devanshbatham/openredirex)
-- **Scaner**: [lostools](https://github.com/coffinsp/lostools), [PenHunter](https://github.com/cc1a2b/PenHunter), [argus](https://github.com/jasonxtn/argus), [xlsNinja](https://github.com/atoz-chevara/xlsNinja), [nuclei](https://github.com/projectdiscovery/nuclei)
-- **LFI**: [LFIscanner](https://github.com/R3LI4NT/LFIscanner), [Lfi-Space](https://github.com/capture0x/Lfi-Space)
-- **SQLj**: [SQL-Injection-Finder](https://github.com/j1t3sh/SQL-Injection-Finder), [sqlmap](https://github.com/sqlmapproject/sqlmap)
-- **XSS**: [XSStrike](https://github.com/s0md3v/XSStrike)
-- **SSRF**: [SSRFmap](https://github.com/swisskyrepo/SSRFmap)
-- **JS**: [Pinkerton](https://github.com/000pp/Pinkerton), [SecretFinder](https://github.com/m4ll0k/SecretFinder)
-- **CMS**: [CMSeeK](https://github.com/Tuhinshubhra/CMSeeK), [droopescan](https://github.com/droope/droopescan)
-- **Dorks**: [github-dorks](https://github.com/techgaun/github-dorks)
-- **Reconnaissance**: [theHarvester](https://github.com/laramies/theHarvester)
-- **Secrets**: [trufflehog](https://github.com/trufflesecurity/trufflehog)
-- **Nuclei_Templates**: [nuclei-templates](https://github.com/projectdiscovery/nuclei-templates)
-- **Wordlists**: [SecLists](https://github.com/danielmiessler/SecLists) — опционально, по флагу/вопросу
+    nuclei — темплейт-базированное сканирование
 
-### Go-инструменты (`go install`)
+    nikto — веб-сканер
 
-- [assetfinder](https://github.com/tomnomnom/assetfinder) — поиск связанных доменов
-- [dalfox](https://github.com/hahwul/dalfox) — обнаружение XSS
-- [katana](https://github.com/projectdiscovery/katana) — краулер
-- [jshunter](https://github.com/cc1a2b/jshunter) — анализ JS
-- [subfinder](https://github.com/projectdiscovery/subfinder) — пассивный поиск поддоменов
-- [nuclei](https://github.com/projectdiscovery/nuclei) — шаблонное сканирование
-- [httpx](https://github.com/projectdiscovery/httpx) — проверка HTTP-доступности/заголовков
-- [wpprobe](https://github.com/Chocapikk/wpprobe) — обнаружение WordPress
-- [waybackurls](https://github.com/tomnomnom/waybackurls) — сбор исторических URL из архивов
-- [gau](https://github.com/lc/gau) — сбор исторических URL (доп. источники)
-- [gowitness](https://github.com/sensepost/gowitness) — массовые скриншоты хостов
-- [subzy](https://github.com/PentestPad/subzy) — детект subdomain takeover
-- [gitleaks](https://github.com/gitleaks/gitleaks) — поиск секретов в коде
+    Metasploit — фреймворк для эксплуатации (опционально)
 
-### Ruby (`gem`)
+    interactsh-client — OOB-сервер для слепых SSRF/XXE/RCE
 
-- [WPScan](https://github.com/wpscanteam/wpscan) — сканер уязвимостей WordPress
+    notify — пуш результатов в Slack/Discord/Telegram
 
-### Системные пакеты (через пакетный менеджер)
+🎯 CMS
 
-- **nmap** — сетевой сканер портов и сервисов
-- **ffuf** — быстрый HTTP fuzzer
-- **feroxbuster** — перебор директорий
-- **nikto** — веб-сканер уязвимостей сервера
-- **Metasploit Framework** — платформа для эксплуатации (опционально, через официальный установщик Rapid7)
-- **rustscan** — быстрый сканер портов на Rust (опционально, через COPR для `dnf`)
+    WPScan — сканер WordPress
 
-## Рекомендуемый workflow для Bug Bounty
+    CMSeeK, droopescan — определение и анализ CMS
 
-1. Разведка: `theHarvester` → `subfinder` → `assetfinder` → `httpx`
-2. Проверка takeover: `subzy`
-3. Поиск секретов: `SecretFinder` → `trufflehog` → `gitleaks`
-4. Fuzzing: `ffuf` → `feroxbuster` → `dirsearch` (с использованием SecLists)
-5. Сканирование: `nuclei` → `nikto`
-6. Эксплуатация: `Metasploit` для известных уязвимостей
+    wpprobe — быстрый WordPress-сканер
 
-## Важно
+🔌 API / GraphQL
 
-Используйте установленный набор инструментов только в рамках законных и согласованных тестов (authorized testing, программы bug bounty со scope). Скрипт автоматизирует установку мощных инструментов, неправильное или несанкционированное использование которых может привести к нарушению закона.
+    graphql-cop — сканер уязвимостей GraphQL
+
+    kiterunner — brute-force API-эндпоинтов по Swagger/OpenAPI
+
+📊 Wordlists
+
+    SecLists — коллекции словарей для брутфорса (опционально)
+
+🔐 Анализ JavaScript & Secrets
+
+    SecretFinder — поиск API-ключей в JS
+
+    Pinkerton — анализ JS на уязвимости
+
+    trufflehog, gitleaks — поиск credentials в коде
+
+🚀 Fuzzing & Brute Force
+
+    ffuf — быстрый HTTP fuzzer
+
+    feroxbuster — перебор путей
+
+    dirsearch — поиск скрытых папок
+
+    Arjun, x8 — обнаружение скрытых HTTP-параметров
+
+☁️ Cloud
+
+    cloud_enum — enum S3/Azure/GCP по имени компании
+
+    S3Scanner — поиск открытых S3-бакетов
+
+    CloudBrute — enum облачных ресурсов
+
+    Trivy — сканер уязвимостей контейнеров/IaC (опционально)
+
+📱 Mobile (опционально)
+
+    MobSF — статический + динамический анализ APK/IPA
+
+    apktool, jadx — декомпиляция APK
+
+📂 Структура каталогов
+text
+
+├── Web_catalog/          # Веб-каталоги и сканеры
+├── Subdomains/           # Инструменты для поиска поддоменов
+├── Scaner/               # Сканеры уязвимостей
+├── CMS/                  # CMS-сканеры
+├── SSRF/                 # SSRF-инструменты
+├── Open_redirect/        # Open redirect сканеры
+├── LFI/                  # LFI-инструменты
+├── XSS/                  # XSS-сканеры
+├── SSTI/                 # SSTI-инструменты
+├── SQLj/                 # SQL-инъекции
+├── JS/                   # JavaScript-анализ
+├── Dorks/                # Dorks-инструменты
+├── Reconnaissance/       # Разведка
+├── Secrets/              # Поиск секретов
+├── Nuclei_Templates/     # Шаблоны Nuclei
+├── Wordlists/            # Словари
+├── API_GraphQL/          # API/GraphQL инструменты
+├── Cloud/                # Cloud-инструменты
+└── Mobile/               # Mobile-инструменты (опционально)
+
+🖥️ Поддерживаемые системы
+
+    Debian/Ubuntu/Kali (apt)
+
+    Fedora/RHEL (dnf/yum)
+
+    Arch/Manjaro (pacman)
+
+    openSUSE (zypper)
+
+⚙️ Использование
+Базовый запуск
+bash
+
+python3 main.py
+
+Интерактивный режим
+
+Скрипт автоматически определит пакетный менеджер и предложит установить опциональные компоненты.
+Неинтерактивный режим
+bash
+
+# Установка всех опциональных компонентов
+python3 main.py --non-interactive --install-seclists --install-metasploit --install-trivy --install-mobile-tools
+
+Аргументы командной строки
+Аргумент	Описание
+--package-manager {apt,dnf,yum,pacman,zypper}	Явно указать пакетный менеджер
+--venv-dir DIR	Имя каталога для виртуального окружения (по умолчанию: venv)
+--skip-venv	Не создавать виртуальное окружение Python
+--install-seclists	Установить SecLists без вопроса
+--install-metasploit	Установить Metasploit без вопроса
+--install-trivy	Установить Trivy без вопроса
+--install-mobile-tools	Установить инструменты для мобильного пентеста
+--non-interactive, -y	Не задавать вопросы; использовать флаги выше
+🔧 Рекомендуемый workflow
+
+    Разведка: theHarvester → subfinder → amass → chaos → assetfinder → httpx
+
+    Проверка takeover: subzy
+
+    Порты/DNS: naabu → dnsx
+
+    Поиск секретов: SecretFinder → trufflehog → gitleaks
+
+    Fuzzing/параметры: ffuf → feroxbuster → dirsearch → Arjun/x8 (с SecLists)
+
+    Краулинг: katana / hakrawler → waybackurls / gau
+
+    Сканирование: nuclei → nikto → graphql-cop (для API)
+
+    Слепые уязвимости: interactsh-client (OOB для SSRF/XXE/RCE)
+
+    Cloud: cloud_enum → S3Scanner
+
+    Эксплуатация: Metasploit для известных уязвимостей
+
+    Автоматизация уведомлений: notify (Slack/Discord/Telegram)
+
+🐍 Виртуальное окружение
+
+Скрипт автоматически создает виртуальное окружение Python для изоляции зависимостей:
+bash
+
+# Активация
+source venv/bin/activate
+
+# Деактивация
+deactivate
+
+📝 Примечания
+Python 2 vs Python 3
+
+Некоторые легаси-инструменты (например, tplmap, LFIscanner) написаны под Python 2 и несовместимы с Python 3. Для них рекомендуется использовать отдельное окружение с Python 2 или искать актуальные форки.
+Сборка из исходников
+
+    kiterunner собирается из исходников через Makefile (требует CGO + libzstd)
+
+    CloudBrute требует ручной go build после клонирования
+
+Docker для MobSF
+
+MobSF рекомендуется запускать через Docker:
+bash
+
+docker pull opensecurity/mobile-security-framework-mobsf:latest
+
+🛠️ Требования
+
+    Linux (Debian/Ubuntu/Kali/Fedora/Arch/openSUSE)
+
+    Python 3.6+
+
+    sudo права или root-доступ
+
+    Интернет-соединение
+
+📄 Лицензия
+
+MIT License
+⚖️ Отказ от ответственности
+
+Данный скрипт предназначен исключительно для образовательных целей и проведения авторизованных тестов на проникновение. Использование инструментов без явного разрешения владельца системы является незаконным. Автор не несет ответственности за неправомерное использование.
+<p align="center"> <sub>Built with ❤️ for the security community</sub> </p>
